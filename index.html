@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Compiled and minified CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
+    />
+
+    <!--Import Google Icon Font-->
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <!--Import materialize.css-->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0/css/bootstrap.min.css"
+    />
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <title>Akash Account Tracking Tool</title>
+  </head>
+  <body>
+    <div class="row">
+      <div class="col s12 m6">
+        <div class="card blue-grey darken-1">
+          <div class="card-content white-text">
+            <p>
+              Entries with multiple addresses need to be separated by a space.
+              if copying a list from Google Sheets, simply highlight entire
+              column of addresses, right-click -> copy, then paste in the
+              account tracker.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="class container">
+      <div class="row">
+        <form class="col s12">
+          <div class="row">
+            <div class="col s3">
+              <form>
+                <!-- <label for="title">Akash Address</label> -->
+                <input
+                  type="text"
+                  name="title"
+                  id="aktAddress"
+                  placeholder="Akash Address(s)"
+                />
+                <button class="btn btn-primary submitAddress">
+                  Add Address
+                </button>
+              </form>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div style="float: left; margin-right: 10px">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col s3">Address</th>
+            </tr>
+          </thead>
+          <tbody class="addressTable" id="aktTable">
+            <!-- Insert account rows here -->
+          </tbody>
+        </table>
+      </div>
+      <div style="float: left; margin-right: 10px">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col s3">Tx Incoming</th>
+              <th scope="col s3">Tx Outgoing</th>
+            </tr>
+          </thead>
+          <tbody class="statsTable" id="aktTable">
+            <!-- Insert account rows here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      //Format and round account values for increased legibility
+      function formatNumber(num) {
+        return num.toFixed(2).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,")
+      }
+
+      // The below code fills in the first row of the table
+      function getStats(address) {
+        //for (var i = 0; i < address.length; i++) {
+        var homeAddress = address
+        // ajax request to aneka api
+        fetch(
+          `https://api.akash.aneka.io/validators/${address}/transactions?limit=10000`
+        )
+          // reformatting response into json data
+          .then((r) => r.json())
+          // returns the akash data obj
+          .then((addressData) => {
+            // creating a table row with all of the akash address info inside
+            console.log(addressData.data.data)
+            var txSend = 0
+            var txRecieve = 0
+
+            for (var j = 0; j < addressData.data.data.transfer.length; j++) {
+              console.log(homeAddress)
+              for (
+                var k = 0;
+                k <
+                addressData.data.data.transfer[j].transactions.transfer.length;
+                k++
+              ) {
+                if (
+                  addressData.data.data.transfer[j].transactions.transfer[k]
+                    .value.from_address == homeAddress
+                ) {
+                  txSend +=
+                    addressData.data.data.transfer[j].transactions.transfer[k]
+                      .value.amount[0].amount
+                } else {
+                  txRecieve +=
+                    addressData.data.data.transfer[j].transactions.transfer[k]
+                      .value.amount[0].amount
+                }
+              }
+            }
+            let tr = document.createElement("tr")
+            tr.id = addressData.addressID
+            // delete button is given a data attribute to match the id of the entire row for easy deletion
+            tr.innerHTML = `
+                
+
+                <td>${formatNumber(txRecieve / 1000000)}</td>
+                <td>${formatNumber(txSend / 1000000)}</td>
+  
+  
+          `
+            // adds the table row to the page
+            document.querySelector(".statsTable").append(tr)
+            //console.log(txTest(address.data.address))
+          })
+          // handle your errors
+          .catch((e) => console.error(e))
+        //}
+      }
+
+      function showAddr(address) {
+        for (var i = 0; i < address.length; i++) {
+          var homeAddress = address
+
+          let tr = document.createElement("tr")
+
+          tr.innerHTML = `
+                <td>${homeAddress[i]}</td>
+
+          `
+          // adds the table row to the page
+          document.querySelector(".addressTable").append(tr)
+        }
+      }
+
+      document
+        .querySelector(".submitAddress")
+        .addEventListener("click", (e) => {
+          // prevents the form from automatically refreshing the page
+          e.preventDefault()
+          // grabs the text from the input
+          var address = document.querySelector("#aktAddress").value
+          var addressArr = address.split(" ")
+          // passes ajax function the account address
+          addressArr.forEach((address) => getStats(address))
+          showAddr(addressArr)
+          //getStats(addressArr)
+          //console.log(addressArr)
+          // clears the input
+          document.querySelector("#aktAddress").value = ""
+        })
+
+      // })
+    </script>
+  </body>
+</html>
