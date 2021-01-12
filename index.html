@@ -126,7 +126,10 @@
                   txSend +=
                     addressData.data.data.transfer[j].transactions.transfer[k]
                       .value.amount[0].amount
-                } else {
+                } else if (
+                  addressData.data.data.transfer[j].transactions.transfer[k]
+                    .value.to_address == homeAddress
+                ) {
                   txRecieve +=
                     addressData.data.data.transfer[j].transactions.transfer[k]
                       .value.amount[0].amount
